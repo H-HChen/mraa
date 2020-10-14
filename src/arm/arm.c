@@ -17,8 +17,10 @@
 #include "arm/phyboard.h"
 #include "arm/raspberry_pi.h"
 #include "arm/adlink_ipi.h"
-#include "mraa_internal.h"
 #include "arm/roscube_x.h"
+#include "arm/roscube_pico_nx.h"
+#include "arm/roscube_pico_nano.h"
+#include "mraa_internal.h"
 
 
 mraa_platform_t
@@ -26,7 +28,7 @@ mraa_arm_platform()
 {
     mraa_platform_t platform_type = MRAA_UNKNOWN_PLATFORM;
     size_t len = 100;
-#if 0
+
     char* line = malloc(len);
     FILE* fh = fopen("/proc/cpuinfo", "r");
 
@@ -70,10 +72,8 @@ mraa_arm_platform()
         }
         fclose(fh);
     }
+
     free(line);
-#else
-    platform_type = MRAA_ADLINK_ROSCUBE_X;
-#endif
 
     /* Get compatible string from Device tree for boards that dont have enough info in /proc/cpuinfo
      */
@@ -104,6 +104,16 @@ mraa_arm_platform()
             platform_type = MRAA_RASPBERRY_PI;
         else if (mraa_file_contains("/proc/device-tree/model", "ADLINK ARM, LEC-PX30"))
             platform_type = MRAA_ADLINK_IPI;
+        else if (mraa_file_contains("/proc/device-tree/model", "ADLINK ROScube-Pico NX Development Kit"))
+            platform_type = MRAA_ADLINK_ROSCUBE_PICO_NX;
+        else if (mraa_file_contains("/proc/device-tree/model", "ADLINK ROScube-Pico NANO Development Kit"))
+            platform_type = MRAA_ADLINK_ROSCUBE_PICO_NANO;
+    }
+
+    // FIXME(YuSheng) Since we could not change ROScube X device tree, so when we selecting the platform, the last options should 
+    // be ROScubeX.
+    if (platform_type = MRAA_UNKNOWN_PLATFORM) {
+        platform_type = MRAA_ADLINK_ROSCUBE_X;
     }
 
     switch (platform_type) {
@@ -134,6 +144,12 @@ mraa_arm_platform()
 	    case MRAA_ADLINK_ROSCUBE_X:
 	        plat = mraa_roscube_x();
 	        break;
+        case MRAA_ADLINK_ROSCUBE_PICO_NX:
+            plat = mraa_roscube_pico_nx();
+            break;
+        case MRAA_ADLINK_ROSCUBE_PICO_NANO:
+            plat = mraa_roscube_pico_nano();
+            break;
         default:
             plat = NULL;
             syslog(LOG_ERR, "Unknown Platform, currently not supported by MRAA");
